@@ -1,0 +1,16 @@
+[Unit]
+Description=AML Memory Service
+After=network.target postgresql.service
+
+[Service]
+# Create this system user first, or change it to your own account.
+User=aml
+WorkingDirectory=/opt/aml-memory
+EnvironmentFile=/opt/aml-memory/.env
+Environment=PYTHONPATH=/opt/aml-memory/src
+ExecStart=/opt/aml-memory/.venv/bin/python -m uvicorn aml_memory.api:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

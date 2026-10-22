@@ -1,0 +1,25 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# test / runtime artifacts
+.pytest_cache/
+.mimosa/
+.coverage
+htmlcov/
+artifacts/
+logs/
+*.db
+*.sqlite
+
+# data (never commit evaluation data)
+data/
+datasets/
