@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     max_item_chars: int = 4000
     max_total_chars: int = 350000
     window_date_header: bool = False
+    resolve_relative_dates: bool = True
 
     db_pool_min: int = 1
     db_pool_max: int = 20

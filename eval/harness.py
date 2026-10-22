@@ -254,12 +254,14 @@ async def run(
     qid_filter: set[str] | None = None,
     reuse_db: bool = False,
     window_date_header: bool = False,
+    resolve_relative_dates: bool = False,
 ) -> None:
     settings = Settings().model_copy(
         update={
             "embedding_dims": dims,
             "embedding_concurrency": 8,
             "window_date_header": window_date_header,
+            "resolve_relative_dates": resolve_relative_dates,
         }
     )
     database = Database(settings)
@@ -391,6 +393,7 @@ if __name__ == "__main__":
     parser.add_argument("--qid-file", default=None)
     parser.add_argument("--reuse-db", action="store_true")
     parser.add_argument("--window-date-header", action="store_true")
+    parser.add_argument("--resolve-relative-dates", action="store_true")
     args = parser.parse_args()
     run_id = args.run_id or f"d{args.dims}"
     qid_filter = None
@@ -417,6 +420,7 @@ if __name__ == "__main__":
             qid_filter=qid_filter,
             reuse_db=args.reuse_db,
             window_date_header=args.window_date_header,
+            resolve_relative_dates=args.resolve_relative_dates,
         )
     )
     summarize(Path(args.out))

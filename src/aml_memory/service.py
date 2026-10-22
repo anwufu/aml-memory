@@ -7,7 +7,7 @@ import math
 import re
 from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 
@@ -162,6 +162,86 @@ def trim_content(content: str, limit: int) -> str:
     return content[: max(1, limit - 1)].rstrip() + "…"
 
 
+WEEKDAYS = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
+
+RELATIVE_PATTERN = re.compile(
+    r"\b(?:last|previous)\s+"
+    r"(?:weekend|week|month|year|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b",
+    re.IGNORECASE,
+)
+
+
+def resolve_relative_dates(text: str, anchor_ms: int | None) -> str:
+    """Append a resolved date to relative time expressions.
+
+    This is a display-time annotation only: the stored/embedded content is
+    unchanged, and the original phrase is preserved in front of the parenthesis.
+    """
+    if anchor_ms is None:
+        return text
+    anchor = datetime.fromtimestamp(anchor_ms / 1000, tz=timezone.utc)
+    anchor_date = anchor.strftime("%Y-%m-%d")
+
+    def replace(match: re.Match) -> str:
+        phrase = match.group(0)
+        lowered = phrase.lower()
+        if "weekend" in lowered:
+            return f"{phrase} (the weekend before {anchor_date})"
+        if "week" in lowered:
+            return f"{phrase} (the week before {anchor_date})"
+        if "month" in lowered:
+            previous_month = anchor.replace(day=1) - timedelta(days=1)
+            return f"{phrase} ({previous_month.strftime('%Y-%m')})"
+        if "year" in lowered:
+            return f"{phrase} ({anchor.year - 1})"
+        weekday = lowered.split()[-1]
+        target = WEEKDAYS.get(weekday)
+        if target is None:
+            return phrase
+        delta = (anchor.weekday() - target) % 7
+        if delta == 0:
+            delta = 7
+        resolved = (anchor - timedelta(days=delta)).strftime("%Y-%m-%d")
+        return f"{phrase} ({resolved})"
+
+    text = RELATIVE_PATTERN.sub(replace, text)
+    text = re.sub(
+        r"\byesterday\b",
+        f"yesterday ({(anchor - timedelta(days=1)).strftime('%Y-%m-%d')})",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(r"\btoday\b", f"today ({anchor_date})", text, flags=re.IGNORECASE)
+    return text
+
+
+TEMPORAL_MARKERS = (
+    "when",
+    "what date",
+    "which month",
+    "which year",
+    "what time",
+    "what day",
+    "what year",
+    "which day",
+)
+
+
+def is_temporal_query(query: str) -> bool:
+    lowered = query.lower()
+    if "how long" in lowered or "duration" in lowered:
+        return False
+    return any(marker in lowered for marker in TEMPORAL_MARKERS)
+
+
 class MemoryService:
     def __init__(self, db: Database, embedder, settings: Settings) -> None:
         self.db = db
@@ -276,6 +356,7 @@ class MemoryService:
     async def search(self, request: SearchRequest) -> dict:
         top_k = min(request.top_k, self.settings.top_k_max)
         query_text = content_to_text(request.query)
+        apply_dates = self.settings.resolve_relative_dates and is_temporal_query(query_text)
         if self.db.pool is None:
             raise RuntimeError("database is not connected")
 
@@ -336,6 +417,8 @@ class MemoryService:
         for index, score in final:
             row = rows[index]
             content = row["content"]
+            if apply_dates:
+                content = resolve_relative_dates(content, row["first_ts_ms"])
             if self.settings.window_date_header and row["first_ts_ms"] is not None:
                 content = f"Conversation date: {format_timestamp(row['first_ts_ms'])}\n{content}"
             content = trim_content(content, self.settings.max_item_chars)
