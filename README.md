@@ -7,6 +7,8 @@ Add / Search 记忆服务。系统展示名 **WeftMem**，中文名 **纬忆**�
 系统只做两件事：把平台送来的历史写入记忆，按 `user_id` 检索并返回证据。答案生成、
 评分、编排全部由平台完成，本服务不生成最终答案。
 
+![Official AML Cycle 2 badge — WeftMem #42, Open-Source Methods, Textual Memory, Score 57.67](docs/assets/weftmem-badge.jpg)
+
 ## 官方评测结果
 
 | 项目 | 结果 |
@@ -20,9 +22,14 @@ Add / Search 记忆服务。系统展示名 **WeftMem**，中文名 **纬忆**�
 | 评测提交 commit | [`12e1a94`](https://github.com/anwufu/aml-memory/commit/12e1a94399a6a40ae027893f1ed3c69be4fddc2e) |
 | 榜单发布 | 2026-11-19 18:00（北京时间） |
 
+<details>
+<summary>查看 AML 第二期榜单截图</summary>
+
 ![WeftMem on the AML Cycle 2 leaderboard](docs/assets/weftmem-leaderboard.png)
 
 *WeftMem v0.1.0 — 开源方法榜·文本赛道，官方复核 57.67，第 42 名（[AML 第二期榜单](https://agentmemoryleaderboard.ai/leaderboard)，2026-11-19）*
+
+</details>
 
 榜单地址：<https://agentmemoryleaderboard.ai/leaderboard>
 
